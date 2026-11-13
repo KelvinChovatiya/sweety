@@ -1,5 +1,7 @@
+
 const express = require("express");
 const cors = require("cors");
+const sequelize = require("./config/database");
 
 const app = express();
 
@@ -7,20 +9,40 @@ app.use(cors());
 app.use(express.json());
 
 app.get("/", (req, res) => {
+  res.json({ message: "Sweety API is running!" });
+});
+
+app.get("/api/health", (req, res) => {
+  res.json({ status: "OK" });
+});
+
+const authRoutes = require("./routes/authRoutes");
+app.use("/api/auth", authRoutes);
+
+const authMiddleware = require("./middleware/authMiddleware");
+
+app.get("/api/protected", authMiddleware, (req, res) => {
   res.json({
-    message: "Sweety API is running!",
+    message: "You are authenticated!",
+    userId: req.user.id,
   });
 });
 
-app.get("/api/health",(req,res)=>{
-    res.json({
-        "status": "OK",
-        "database": "Not connected yet"
-    })
-})
+const PORT = process.env.PORT || 5000;
 
-const PORT = process.env.PORT || 3000;
+async function startServer() {
+  try {
+    await sequelize.authenticate();
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+    console.log("PostgreSQL connected successfully!");
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  } catch (error) {
+    console.error("Database connection failed:", error.message);
+    process.exit(1);
+  }
+}
+
+startServer();
