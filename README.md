@@ -29,6 +29,23 @@ A full-stack blood glucose tracking application built with React, Node.js, Expre
 - Highest, lowest, average, and total reading count
 - Empty-state handling when no readings exist
 
+## Screenshots
+
+### Login
+![Login](screenshots/login.png)
+
+### Dashboard
+![Dashboard](screenshots/dashboard.png)
+
+### Reading Management
+![Reading Management](screenshots/reading_management.png)
+
+### Reports
+![Reports](screenshots/reports.png)
+
+### Month-to-Date Report
+![Month-to-Date Report](screenshots/reports_month_to_date.png)
+
 ## Technology Stack
 
 | Layer | Technology |
@@ -190,6 +207,25 @@ All protected endpoints require:
 - Report statistics are calculated from the logged-in user's readings.
 - Empty reports return `null` for highest, lowest, and average, with a count of zero.
 - The database schema is provided as SQL rather than being recreated with Sequelize synchronization.
+
+
+## Testing
+
+The application was manually tested using the frontend and Postman.
+
+Verified scenarios:
+
+- User signup and login
+- Protected routes and JWT authentication
+- Creating, viewing, updating, and deleting readings
+- Glucose validation (40–600 mg/dL)
+- Duplicate reading prevention
+- Future-date rejection
+- User-specific reading access
+- Daily, month-to-date, and previous-month reports
+- Empty report handling
+
+Automated tests are not currently included.
 
 ## Future Improvements
 
