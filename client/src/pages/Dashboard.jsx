@@ -90,6 +90,11 @@ await fetchReport("daily", today);
 }, []);
   const handleAddReading = async (e) => {
     e.preventDefault();
+    if (!form.glucose_level || String(form.glucose_level).trim() === "") {
+      setFormError("Please enter a glucose value.");
+      return;
+    }
+
     setSaving(true);
     setFormError("");
 
@@ -239,7 +244,6 @@ await fetchReport("daily", today);
             <option value="after_lunch">After lunch</option>
             <option value="after_dinner">After dinner</option>
           </select>
-
           <input
             type="number"
             min="40"
@@ -247,12 +251,15 @@ await fetchReport("daily", today);
             step="1"
             placeholder="Glucose (40–600 mg/dL)"
             value={form.glucose_level}
-            onChange={(e) =>
-              setForm({ ...form, glucose_level: e.target.value })
-            }
-            required
-            className="rounded-lg border p-3"
+            onChange={(e) => {
+              setForm({ ...form, glucose_level: e.target.value });
+              if (formError) setFormError("");
+            }}
+            className={`rounded-lg border p-3 ${
+              formError && !form.glucose_level ? "border-red-500" : ""
+            }`}
           />
+
 
           <div className="md:col-span-3">
             {formError && (

@@ -1,16 +1,49 @@
 
 const { GlucoseReading } = require("../models");
 
+const slotLabels = {
+  morning_fasting: "Morning fasting",
+  after_breakfast: "After breakfast",
+  after_lunch: "After lunch",
+  after_dinner: "After dinner",
+};
+
+const validateGlucoseLevel = (value) => {
+  if (value === undefined || value === null || value === "") {
+    return "Please enter a glucose value.";
+  }
+
+  const level = Number(value);
+
+  if (!Number.isInteger(level) || level < 40 || level > 600) {
+    return "Value must be between 40 and 600 mg/dl.";
+  }
+
+  return null;
+};
+
+
 const createReading = async (req, res) => {
   try {
     const { reading_date, slot, glucose_level } = req.body;
 
     // Check required fields
-    if (!reading_date || !slot || glucose_level === undefined) {
+    if (!reading_date || !slot) {
       return res.status(400).json({
-        message: "Date, slot and glucose level are required.",
+        message: "Date and slot are required.",
       });
     }
+
+    // Validate glucose value
+    const glucoseError = validateGlucoseLevel(glucose_level);
+
+    if (glucoseError) {
+      return res.status(400).json({
+        message: glucoseError,
+      });
+    }
+
+    const level = Number(glucose_level);
 
     // Validate date format
     if (!/^\d{4}-\d{2}-\d{2}$/.test(reading_date)) {
@@ -30,12 +63,12 @@ const createReading = async (req, res) => {
       });
     }
 
-    // Future date check
+    // Check future date
     const today = new Date().toISOString().slice(0, 10);
 
     if (reading_date > today) {
       return res.status(400).json({
-        message: "Future dates are not allowed.",
+        message: "Date cannot be in the future.",
       });
     }
 
@@ -53,16 +86,32 @@ const createReading = async (req, res) => {
       });
     }
 
-    // Validate glucose level
-    const level = Number(glucose_level);
+    // Check duplicate slot for this user and date
+    const existingSlot = await GlucoseReading.findOne({
+      where: {
+        user_id: req.user.id,
+        reading_date,
+        slot,
+      },
+    });
 
-    if (
-      !Number.isInteger(level) ||
-      level < 40 ||
-      level > 600
-    ) {
+    if (existingSlot) {
+      return res.status(409).json({
+        message: `You already have a ${slotLabels[slot]} reading for this date.`,
+      });
+    }
+
+    // Check maximum four readings per day
+    const readingCount = await GlucoseReading.count({
+      where: {
+        user_id: req.user.id,
+        reading_date,
+      },
+    });
+
+    if (readingCount >= 4) {
       return res.status(400).json({
-        message: "Glucose level must be an integer between 40 and 600.",
+        message: "You can add only 4 readings per day.",
       });
     }
 
@@ -79,7 +128,7 @@ const createReading = async (req, res) => {
       reading,
     });
   } catch (error) {
-    // Duplicate slot for the same user and date
+    // Database duplicate safety check
     if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(409).json({
         message: "A reading already exists for this slot and date.",
@@ -93,6 +142,7 @@ const createReading = async (req, res) => {
     });
   }
 };
+
 
 const getReadings = async (req, res) => {
   try {
