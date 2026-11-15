@@ -8,26 +8,42 @@ function App() {
 const [password, setPassword] = useState("");
 const [error, setError] = useState("");
 const [loading, setLoading] = useState(false);
+
+const [name, setName] = useState("");
+const [isSignup, setIsSignup] = useState(false);
+const [success, setSuccess] = useState("");
 const navigate = useNavigate()
 
 
 const handleSubmit = async (e) => {
   e.preventDefault();
 
-
   setError("");
+  setSuccess("");
   setLoading(true);
 
   try {
-    const response = await axios.post(
-      "http://localhost:5000/api/auth/login",
-      { email, password }
-    );
+    if (isSignup) {
+      await axios.post(
+        "http://localhost:5000/api/auth/signup",
+        { name, email, password }
+      );
 
-    localStorage.setItem("token", response.data.token);
-    localStorage.setItem("user", JSON.stringify(response.data.user));
+      setIsSignup(false);
+      setName("");
+      setPassword("");
+      setSuccess("Account created successfully. Please log in.");
+    } else {
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        { email, password }
+      );
 
-    navigate("/dashboard");
+      localStorage.setItem("token", response.data.token);
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+
+      navigate("/dashboard");
+    }
   } catch (error) {
     setError(
       error.response?.data?.message || "Something went wrong."
@@ -64,18 +80,35 @@ const handleSubmit = async (e) => {
 
   
 
-              <h2 className="text-2xl font-bold p-2 text-[#19395B]">
-                Welcome back
+            <h2 className="text-2xl font-bold p-2 text-[#19395B]">
+  {isSignup ? "Create your account" : "Welcome back"}
+</h2>
 
-              </h2>
-
-              <p className="text-[#19395B] text-lg">
-                Sign in to your account to continue to Sweety.
-                </p>
-      
+<p className="text-[#19395B] text-lg">
+  {isSignup
+    ? "Create an account to start tracking your glucose."
+    : "Sign in to your account to continue to Sweety."}
+</p>
 
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-6">
+          {isSignup && (
+  <>
+    <label htmlFor="name" className="font-medium">
+      Full Name
+    </label>
+
+    <input
+      id="name"
+      type="text"
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+      placeholder="Your full name"
+      required
+      className="w-full rounded-lg border border-slate-300 p-3"
+    />
+  </>
+)}
           <label htmlFor="email" className="font-medium">
             Email
           </label>
@@ -99,17 +132,41 @@ const handleSubmit = async (e) => {
            onChange={(e) => setPassword(e.target.value)}
            required/>
 
+
            {error && <p className="text-red-600 mt-4">{error}</p>}
+{success && <p className="mt-4 text-green-600">{success}</p>}
 
           {/* <button type="submit" className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600">
             Login
           </button> */}
 
-          <button className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
-          type="submit" disabled={loading}>
-  {loading ? "Signing in..." : "Login"}
+        <button
+  className="mt-3 rounded-lg bg-[#19395B] px-4 py-3 text-white hover:opacity-90 disabled:opacity-60"
+  type="submit"
+  disabled={loading}
+>
+  {loading
+    ? "Please wait..."
+    : isSignup
+      ? "Create Account"
+      : "Login"}
 </button>
        </form>
+       <p className="mt-5 text-center text-sm text-slate-600">
+  {isSignup ? "Already have an account?" : "Don't have an account?"}
+
+  <button
+    type="button"
+    onClick={() => {
+      setIsSignup(!isSignup);
+      setError("");
+      setSuccess("");
+    }}
+    className="ml-2 font-semibold text-[#19395B] hover:underline"
+  >
+    {isSignup ? "Login" : "Sign up"}
+  </button>
+</p>
         </div>
       </section>
 

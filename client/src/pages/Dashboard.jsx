@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import api from "../services/api";
 import ReportFilters from "../components/reports/ReportFilters";
 import ReportSummary from "../components/reports/ReportSummary";
+import { useNavigate } from "react-router-dom";
 
 const Dashboard = () => {
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -55,20 +56,38 @@ const fetchReport = async (type, date) => {
   }
 };
 
-  useEffect(async () => {
-     fetchReport("daily", selectedDate);
+const navigate = useNavigate();
 
-    const readingsResponse = await api.get("/readings");
+const handleLogout = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
 
-    setReadings(
-      Array.isArray(readingsResponse.data)
-        ? readingsResponse.data
-        : readingsResponse.data.readings || [],
-    );
+  navigate("/", { replace: true });
+};
 
-    fetchReport();
-  }, []);
 
+ useEffect(() => {
+  const fetchDashboardData = async () => {
+    try {
+      const readingsResponse = await api.get("/readings");
+
+      setReadings(
+        Array.isArray(readingsResponse.data)
+          ? readingsResponse.data
+          : readingsResponse.data.readings || []
+      );
+
+      const today = new Date().toLocaleDateString("en-CA");
+await fetchReport("daily", today);
+    } catch (error) {
+      setError(
+        error.response?.data?.message || "Could not load dashboard."
+      );
+    }
+  };
+
+  fetchDashboardData();
+}, []);
   const handleAddReading = async (e) => {
     e.preventDefault();
     setSaving(true);
@@ -150,9 +169,17 @@ const fetchReport = async (type, date) => {
   };
   return (
     <main className="min-h-screen bg-slate-100 p-6">
+      <div className="flex justify-between">
+
       <h1 className="text-2xl font-bold text-[#19395B]">
         Welcome, {user.name}
       </h1>
+      <button
+        onClick={handleLogout}
+        className="rounded-lg bg-red-600 px-4 py-2 text-white">
+        Logout
+      </button>
+      </div>
 
       <p className="mt-2 text-slate-600">Your blood glucose dashboard</p>
 
